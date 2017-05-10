@@ -1,4 +1,4 @@
-# Copyright (c) 2013, Frappe Technologies Pvt. Ltd. and contributors
+# Copyright (c) 2013, FinByz Tech Pvt. Ltd. and contributors
 # For license information, please see license.txt
 
 from __future__ import unicode_literals
@@ -26,5 +26,5 @@ def get_outstanding_invoices(filters):
 		from 
 			`tabSales Invoice` si
 		where
-			si.outstanding_amount > 0 and si.docstatus = 1 and {cond}
+			si.outstanding_amount > 0 and si.docstatus = 1 and naming_series != 'SINV-MAC-' and naming_series != 'OMSINV-' and {cond}
 	""".format(cond=cond), filters, as_list=1)
