@@ -85,6 +85,13 @@ app_license = "MIT"
 # 		"on_trash": "method"
 #	}
 # }
+doc_events = {
+	"Installation Note": {
+		"on_submit": "finance.api.install_on_submit"
+	}
+}
+
+
 
 # Scheduled Tasks
 # ---------------
