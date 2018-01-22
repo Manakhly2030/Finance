@@ -20,7 +20,7 @@ def execute(filters=None):
 def get_columns():
 	columns = [_("Lead") + ":Link/Lead:80",  
 				_("User") + ":Link/User:100",  
-				_("Date") + ":Data:100",
+				_("Date") + ":Date:120",
 				_("Caller") + "::110", 
 				_("Organization") + "::180", 
 				_("Person") + "::120", 
@@ -39,11 +39,11 @@ def get_data(filters):
 	where_clause+=filters.user and " and co.user = '%s' " % filters.user or ""	
 	where_clause+=filters.lead and " and co.reference_name = '%s' " % filters.lead or ""
 	
-	where_clause += " and co.communication_date between '%s 00:00:00' and '%s 00:00:00' " % (filters.from_date, filters.to_date)
+	where_clause += " and co.communication_date between '%s 00:00:00' and '%s 23:59:59' " % (filters.from_date, filters.to_date)
 	
 	return frappe.db.sql("""
 		select
-			co.reference_name as "Lead", co.user as "User" , CAST(co.communication_date as date) as "Date", co.sender_full_name as "Caller", ld.company_name as "Organization", ld.lead_name as "Person",  co.subject as "Comment", ld.contact_date as "Schedule", ld.source as "Source" , ld.Status as "Status" , ld.mobile_no as "Mobile" ,	ld.phone as "Phone"
+			co.reference_name as "Lead", co.user as "User" , co.communication_date as "Date", co.sender_full_name as "Caller", ld.company_name as "Organization", ld.lead_name as "Person",  co.subject as "Comment", ld.contact_date as "Schedule", ld.source as "Source" , ld.Status as "Status" , ld.mobile_no as "Mobile" ,	ld.phone as "Phone"
 		from
 			`tabCommunication` as co left join `tabLead` as ld on (co.reference_name = ld.name)
 		where
