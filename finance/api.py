@@ -140,3 +140,18 @@ def make_purchase_order_for_drop_shipment(source_name, for_supplier, target_doc=
 
 	return doclist
 
+@frappe.whitelist()
+def get_items(customer):
+	
+	where_clause = ''
+	where_clause += customer and " parent = '%s' " % customer.replace("'", "\'") or ''
+	
+	return frappe.db.sql("""
+		SELECT 
+			item_code
+		FROM
+			`tabCustomer Item`
+		WHERE
+			%s
+		ORDER BY
+			idx"""% where_clause, as_dict=1)
