@@ -1,10 +1,10 @@
 from __future__ import unicode_literals
-
 import frappe
 from frappe import _
+from frappe.contacts.doctype.address.address import get_address_display, get_default_address
 from frappe.contacts.doctype.contact.contact import get_contact_details, get_default_contact
 from frappe.model.mapper import get_mapped_doc
-from frappe.utils import flt
+from frappe.utils import flt, now_datetime
 
 @frappe.whitelist()
 def install_on_submit(self, method):
@@ -49,8 +49,34 @@ def _get_party_details(party=None, party_type="Lead", ignore_permissions=False):
 		frappe.throw(_("Not permitted for {0}").format(party), frappe.PermissionError)
 
 	party = frappe.get_doc(party_type, party)
+	
+	set_organisation_details(out, party, party_type)
+	set_address_details(out, party, party_type)
 	set_contact_details(out, party, party_type)
+	set_other_values(out, party, party_type)
+
 	return out
+
+def set_organisation_details(out, party, party_type):
+	
+	organisation = None
+	
+	if party_type == 'Lead':
+		organisation = frappe.db.get_value("Lead", {"name": party.name}, "company_name")
+	elif party_type == 'Customer':
+		organisation = frappe.db.get_value("Customer", {"name": party.name}, "customer_name")
+	elif party_type == 'Supplier':
+		organisation = frappe.db.get_value("Supplier", {"name": party.name}, "supplier_name")
+
+	out.update({'organisation': organisation})
+
+def set_address_details(out, party, party_type):
+	billing_address_field = "customer_address" if party_type == "Lead" \
+		else party_type.lower() + "_address"
+	out[billing_address_field] = get_default_address(party_type, party.name)
+	
+	# address display
+	out.address_display = get_address_display(out[billing_address_field])
 
 def set_contact_details(out, party, party_type):
 	out.contact_person = get_default_contact(party_type, party.name)
@@ -67,6 +93,15 @@ def set_contact_details(out, party, party_type):
 		})
 	else:
 		out.update(get_contact_details(out.contact_person))
+
+def set_other_values(out, party, party_type):
+	# copy
+	if party_type=="Customer":
+		to_copy = ["customer_name", "customer_group", "territory", "language"]
+	else:
+		to_copy = ["supplier_name", "supplier_type", "language"]
+	for f in to_copy:
+		out[f] = party.get(f)
 		
 @frappe.whitelist()
 def make_purchase_order_for_drop_shipment(source_name, for_supplier, target_doc=None):
@@ -137,6 +172,38 @@ def make_purchase_order_for_drop_shipment(source_name, for_supplier, target_doc=
 			"postprocess": update_item,
 		}
 	}, target_doc, set_missing_values)
+
+	return doclist
+
+@frappe.whitelist()
+def make_meetings(source_name, doctype, ref_doctype, target_doc=None):
+
+	def set_missing_values(source, target):
+		target.party_type = doctype
+		now = now_datetime()
+		if ref_doctype == "Meeting Schedule":
+			target.scheduled_from = target.scheduled_to = now
+		else:
+			target.meeting_from = target.meeting_to = now
+
+	def update_contact(source, target, source_parent):
+		if doctype == 'Lead':
+			if not source.organization_lead:
+				target.contact_person = source.lead_name
+
+	doclist = get_mapped_doc(doctype, source_name, {
+			doctype: {
+				"doctype": ref_doctype,
+				"field_map":  {
+					'company_name': 'organisation',
+					'name': 'party'
+				},
+				"field_no_map": [
+					"naming_series"
+				],
+				"postprocess": update_contact
+			}
+		}, target_doc, set_missing_values)
 
 	return doclist
 
