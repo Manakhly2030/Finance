@@ -88,6 +88,9 @@ app_license = "MIT"
 doc_events = {
 	"Installation Note": {
 		"on_submit": "finance.api.install_on_submit"
+	},
+	"Opportunity": {
+		"before_save": "finance.api.opp_before_save"
 	}
 }
 

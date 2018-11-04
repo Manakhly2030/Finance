@@ -26,5 +26,5 @@ def get_outstanding_invoices(filters):
 		from 
 			`tabSales Invoice` si
 		where
-			si.outstanding_amount > 0 and si.docstatus = 1 and naming_series != 'SINV-MAC-' and naming_series != 'OMSINV-' and {cond}
+			si.outstanding_amount > 0 and si.docstatus = 1 and naming_series != 'SINV-MAC-' and naming_series != 'OMSINV-' and naming_series != 'SINV/MAC/18-19/' and {cond}
 	""".format(cond=cond), filters, as_list=1)
