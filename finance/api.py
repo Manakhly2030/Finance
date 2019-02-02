@@ -231,11 +231,12 @@ def get_items(customer):
 			idx"""% where_clause, as_dict=1)
 			
 
-def add_sales_person(self):		
-	lead = frappe.get_doc('Lead',self.lead)
-	lead.sales_person = self.sales_person
-	lead.save()
-	frappe.db.commit()
+def add_sales_person(self):
+	if self.lead:
+		lead = frappe.get_doc('Lead',self.lead)
+		lead.sales_person = self.sales_person
+		lead.save()
+		frappe.db.commit()
 	
 	
 @frappe.whitelist()		
