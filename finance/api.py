@@ -278,3 +278,11 @@ def recalculate_depreciation(doc_name):
 			frappe.db.set_value("Depreciation Schedule", doc.schedules[(len(doc.get('schedules')))-1].name, "depreciation_amount", sl_dep_year_last)
 			frappe.db.commit	
 		return sl_dep_year_1
+
+@frappe.whitelist()
+def employee_sales_person():
+	sales_person_employee = frappe.db.sql("""
+		SELECT employee
+		FROM `tabSales Person`
+		""")
+	return sales_person_employee
