@@ -27,6 +27,12 @@ def execute(filters=None):
 		for col in columns_list:
 			row.append(src.get(col))
 
+		if 'Service Charge' in row:
+			row[7] = 0
+			row[9] = 0
+			row[10] = row[6]
+			row[11] = 100
+			
 		# row.append(filters.currency)
 		data.append(row)
 
