@@ -11,10 +11,6 @@ from erpnext.accounts.utils import get_fiscal_year
 @frappe.whitelist()
 def install_on_submit(self, method):
 	add_parts(self, method)
-
-@frappe.whitelist()
-def opp_before_save(self,method):
-	add_sales_person(self)	
 	
 def add_parts(self, method):
 	target_doc = frappe.get_doc("Serial No", self.items[0].serial_no.strip())
@@ -229,30 +225,16 @@ def get_items(customer):
 			%s
 		ORDER BY
 			idx"""% where_clause, as_dict=1)
-			
 
-def add_sales_person(self):
-	if self.lead:
-		lead = frappe.get_doc('Lead',self.lead)
-		lead.sales_person = self.sales_person
-		lead.save()
-		frappe.db.commit()
-	
-	
-@frappe.whitelist()		
+
+@frappe.whitelist()
 def recalculate_depreciation(doc_name):
 	doc = frappe.get_doc("Asset", doc_name)
-	# fiscal_year = get_fiscal_year(doc.purchase_date)[0]
-	# frappe.errprint(fiscal_year)
 	year_end = get_fiscal_year(doc.purchase_date)[2]
-	# frappe.errprint(year_end)
-	# year_end_date = frappe.db.get_value("Fiscal Year","2017-2018","year_end_date")
-	# frappe.errprint(year_end_date)
 	useful_life_year_1 = date_diff(year_end,doc.purchase_date)
 	
 	if doc.schedules[0].depreciation_amount:
 		sl_dep_year_1 = round((doc.schedules[1].depreciation_amount * useful_life_year_1)/ 365,2)
-		#frappe.errprint(sl_dep_year_1)
 		sl_dep_year_last = round(doc.schedules[1].depreciation_amount - sl_dep_year_1,2)
 		frappe.db.set_value("Asset", doc_name, "depreciation_method", "Manual")
 		frappe.db.set_value("Depreciation Schedule", doc.schedules[0].name, "depreciation_amount", sl_dep_year_1)
@@ -266,17 +248,17 @@ def recalculate_depreciation(doc_name):
 				parent = doc.name,
 				parenttype = doc.doctype,
 				parentfield = 'schedules',
-				idx = len(doc.get('schedules'))+1	
+				idx = len(doc.get('schedules'))+1
 			)
 			schedule = frappe.new_doc("Depreciation Schedule")
 			schedule.db_set(fields, commit=True)
 			schedule.insert(ignore_permissions=True)
 			schedule.save(ignore_permissions=True)
-			frappe.db.commit
+			frappe.db.commit()
 			doc.reload()
 		else:
 			frappe.db.set_value("Depreciation Schedule", doc.schedules[(len(doc.get('schedules')))-1].name, "depreciation_amount", sl_dep_year_last)
-			frappe.db.commit	
+			frappe.db.commit()
 		return sl_dep_year_1
 
 @frappe.whitelist()

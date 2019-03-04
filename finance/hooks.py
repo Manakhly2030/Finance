@@ -14,6 +14,17 @@ app_license = "MIT"
 # Includes in <head>
 # ------------------
 
+app_include_js = [
+	"assets/js/summernote.min.js",
+	"assets/js/comment_desk.min.js",
+	"assets/js/editor.min.js",
+	"assets/js/timeline.min.js"
+]
+
+app_include_css = [
+	"assets/css/summernote.min.css"
+]
+
 # include js, css files in header of desk.html
 # app_include_css = "/assets/finance/css/finance.css"
 # app_include_js = "/assets/finance/js/finance.js"
