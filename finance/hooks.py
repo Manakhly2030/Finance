@@ -100,7 +100,10 @@ doc_events = {
 	"Installation Note": {
 		"on_submit": "finance.api.install_on_submit"
 	},
-	("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip"): {
+	"Leave Application":{
+		'on_cancel': 'finance.api.leave_on_cancel'
+	},
+	("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip","Installation Note"): {
 		"before_naming": "finance.api.docs_before_naming",
 	}
 }

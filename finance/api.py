@@ -9,6 +9,11 @@ from frappe.utils import flt, now_datetime
 from erpnext.accounts.utils import get_fiscal_year
 
 @frappe.whitelist()
+def leave_on_cancel(self,method):
+	self.db_set("workflow_state","Cancelled")
+	self.db_set("status","Cancelled")
+
+@frappe.whitelist()
 def install_on_submit(self, method):
 	add_parts(self, method)
 	

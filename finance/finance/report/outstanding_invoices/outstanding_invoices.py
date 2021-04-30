@@ -22,7 +22,7 @@ def get_outstanding_invoices(filters):
 
 	return frappe.db.sql(""" 
 		select
-			si.name, si.posting_date, si.customer, si.rounded_total, si.outstanding_amount
+			si.name, si.posting_date, si.customer, si.grand_total, si.outstanding_amount
 		from 
 			`tabSales Invoice` si
 		where
