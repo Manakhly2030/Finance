@@ -103,11 +103,17 @@ doc_events = {
 	"Leave Application":{
 		'on_cancel': 'finance.api.leave_on_cancel'
 	},
+	"Sales Invoice":{
+		'before_validate': 'finance.api.si_before_validate'
+	},
 	("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip","Installation Note"): {
 		"before_naming": "finance.api.docs_before_naming",
 	}
 }
 
+from erpnext.regional.india import utils 
+from finance.api import validate_document_name
+utils.validate_document_name = validate_document_name
 
 
 # Scheduled Tasks

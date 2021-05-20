@@ -1,5 +1,5 @@
 from __future__ import unicode_literals
-import frappe
+import frappe, re
 from frappe import _
 from frappe.utils import get_fullname, get_datetime, now_datetime, get_url_to_form, date_diff, add_days,add_months, getdate
 from frappe.contacts.doctype.address.address import get_address_display, get_default_address
@@ -289,3 +289,23 @@ def docs_before_naming(self, method):
 		fy_years = fy.split("-")
 		fiscal = fy_years[0][2:] + fy_years[1][2:]
 		self.fiscal = fiscal
+
+def si_before_validate(self,method):
+	validate_document_name(self)
+
+
+GST_INVOICE_NUMBER_FORMAT = re.compile(r"^[a-zA-Z0-9\-/]+$")   #alphanumeric and - /
+def validate_document_name(doc, method=None):
+	"""Validate GST invoice number requirements."""
+
+	country = frappe.get_cached_value("Company", doc.company, "country")
+	einvoice_enable = frappe.db.get_single_value("E Invoice Settings",'enable')
+	# Date was chosen as start of next FY to avoid irritating current users.
+	if country != "India" or getdate(doc.posting_date) < getdate("2021-04-01"):
+		return
+
+	if einvoice_enable and len(doc.name) > 16:
+		frappe.throw(_("Maximum length of document number should be 16 characters as per GST rules. Please change the naming series."))
+
+	if not GST_INVOICE_NUMBER_FORMAT.match(doc.name):
+		frappe.throw(_("Document name should only contain alphanumeric values, dash(-) and slash(/) characters as per GST rules. Please change the naming series."))
