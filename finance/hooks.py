@@ -96,6 +96,10 @@ app_include_css = [
 # 		"on_trash": "method"
 #	}
 # }
+
+doctype_js = {
+	"Payment Entry": "public/js/doctype_js/payment_entry.js",
+}
 doc_events = {
 	"Installation Note": {
 		"on_submit": "finance.api.install_on_submit"

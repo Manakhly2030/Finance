@@ -7,6 +7,8 @@ from frappe.contacts.doctype.contact.contact import get_contact_details, get_def
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import flt, now_datetime
 from erpnext.accounts.utils import get_fiscal_year
+from erpnext import get_company_currency
+from erpnext.accounts.party import set_address_details as set_address_details_erpnext,set_contact_details,set_other_values,set_price_list,get_address_tax_category,set_taxes,get_payment_terms_template,get_due_date,get_party_account
 
 @frappe.whitelist()
 def leave_on_cancel(self,method):
@@ -309,3 +311,81 @@ def validate_document_name(doc, method=None):
 
 	if not GST_INVOICE_NUMBER_FORMAT.match(doc.name):
 		frappe.throw(_("Document name should only contain alphanumeric values, dash(-) and slash(/) characters as per GST rules. Please change the naming series."))
+
+
+
+@frappe.whitelist()
+def get_party_details(party=None, account=None, party_type="Customer", company=None, posting_date=None,
+	bill_date=None, price_list=None, currency=None, doctype=None, ignore_permissions=False, fetch_payment_terms_template=True,
+	party_address=None, company_address=None, shipping_address=None, pos_profile=None):
+
+	if not party:
+		return {}
+	if not frappe.db.exists(party_type, party):
+		frappe.throw(_("{0}: {1} does not exists").format(party_type, party))
+	return _get_party_details(party, account, party_type,
+		company, posting_date, bill_date, price_list, currency, doctype, ignore_permissions,
+		fetch_payment_terms_template, party_address, company_address, shipping_address, pos_profile)
+
+def _get_party_details(party=None, account=None, party_type="Customer", company=None, posting_date=None,
+	bill_date=None, price_list=None, currency=None, doctype=None, ignore_permissions=False,
+	fetch_payment_terms_template=True, party_address=None, company_address=None, shipping_address=None, pos_profile=None):
+	party_details = frappe._dict(set_account_and_due_date(party, account, party_type, company, posting_date, bill_date, doctype))
+	party = party_details[party_type.lower()]
+
+	if not ignore_permissions and not (frappe.has_permission(party_type, "read", party) or frappe.has_permission(party_type, "select", party)):
+		frappe.throw(_("Not permitted for {0}").format(party), frappe.PermissionError)
+
+	party = frappe.get_doc(party_type, party)
+	currency = party.default_currency if party.get("default_currency") else get_company_currency(company)
+
+	party_address, shipping_address = set_address_details_erpnext(party_details, party, party_type, doctype, company, party_address, company_address, shipping_address)
+	set_contact_details(party_details, party, party_type)
+	set_other_values(party_details, party, party_type)
+	set_price_list(party_details, party, party_type, price_list, pos_profile)
+
+	party_details["tax_category"] = get_address_tax_category(party.get("tax_category"),
+		party_address, shipping_address if party_type != "Supplier" else party_address)
+
+	if not party_details.get("taxes_and_charges"):
+		party_details["taxes_and_charges"] = set_taxes(party.name, party_type, posting_date, company,
+			customer_group=party_details.customer_group, supplier_group=party_details.supplier_group, tax_category=party_details.tax_category,
+			billing_address=party_address, shipping_address=shipping_address)
+
+	if cint(fetch_payment_terms_template):
+		party_details["payment_terms_template"] = get_payment_terms_template(party.name, party_type, company)
+
+	if not party_details.get("currency"):
+		party_details["currency"] = currency
+
+	# sales team
+	if party_type=="Customer":
+		party_details["sales_team"] = [{
+			"sales_person": d.sales_person,
+			"allocated_percentage": d.allocated_percentage or None
+		} for d in party.get("sales_team")]
+
+	# supplier tax withholding category
+	if party_type == "Supplier" and party:
+		party_details["supplier_tds"] = frappe.get_value(party_type, party.name, "tax_withholding_category")
+
+	return party_details
+
+def set_account_and_due_date(party, account, party_type, company, posting_date, bill_date, doctype):
+	if doctype not in ["POS Invoice", "Sales Invoice", "Purchase Invoice"]:
+		# not an invoice
+		return {
+			party_type.lower(): party
+		}
+
+	if party:
+		account = get_party_account(party_type, party, company)
+
+	account_fieldname = "debit_to" if party_type=="Customer" else "credit_to"
+	out = {
+		party_type.lower(): party,
+		account_fieldname : account,
+		"due_date": get_due_date(posting_date, party_type, party, company, bill_date)
+	}
+
+	return out
