@@ -389,3 +389,35 @@ def set_account_and_due_date(party, account, party_type, company, posting_date, 
 	}
 
 	return out
+
+@frappe.whitelist()
+@frappe.validate_and_sanitize_search_inputs
+def get_supplier(doctype, txt, searchfield, start, page_len, filters):
+	supp_master_name = frappe.defaults.get_user_default("supp_master_name")
+	if supp_master_name == "Supplier Name":
+		fields = ["name", "supplier_group"]
+	else:
+		fields = ["name", "supplier_name", "supplier_group"]
+	fields = ", ".join(fields)
+
+	return frappe.db.sql("""select {field} from `tabSupplier`
+		where docstatus < 2
+			and ({key} like %(txt)s
+				or supplier_name like %(txt)s)
+			and name in (select supplier from `tabSales Order Item` where parent = %(parent)s)
+			and name not in (select supplier from `tabPurchase Order` po inner join `tabPurchase Order Item` poi
+			     on po.name=poi.parent where po.docstatus<2 and poi.sales_order=%(parent)s)
+		order by
+			if(locate(%(_txt)s, name), locate(%(_txt)s, name), 99999),
+			if(locate(%(_txt)s, supplier_name), locate(%(_txt)s, supplier_name), 99999),
+			name, supplier_name
+		limit %(start)s, %(page_len)s """.format(**{
+			'field': fields,
+			'key': frappe.db.escape(searchfield)
+		}), {
+			'txt': "%%%s%%" % txt,
+			'_txt': txt.replace("%", ""),
+			'start': start,
+			'page_len': page_len,
+			'parent': filters.get('parent')
+		})
