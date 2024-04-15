@@ -293,7 +293,8 @@ def docs_before_naming(self, method):
 		self.fiscal = fiscal
 
 def si_before_validate(self,method):
-	validate_document_name(self)
+	# validate_document_name(self)
+	pass
 
 
 GST_INVOICE_NUMBER_FORMAT = re.compile(r"^[a-zA-Z0-9\-/]+$")   #alphanumeric and - /

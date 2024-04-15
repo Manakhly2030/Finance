@@ -115,9 +115,9 @@ doc_events = {
 	}
 }
 
-from erpnext.regional.india import utils 
-from finance.api import validate_document_name
-utils.validate_document_name = validate_document_name
+# from erpnext.regional.india import utils 
+# from finance.api import validate_document_name
+# utils.validate_document_name = validate_document_name
 
 
 # Scheduled Tasks
